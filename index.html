@@ -485,7 +485,7 @@ function updateHUD(){document.getElementById('hdScore').textContent=score.toLoca
 
 // ===== 输入 =====
 var canvas=document.getElementById('board');
-var aimAngle=-Math.PI/2;
+var aimAngle=-Math.PI/2,slideStart=null,isSliding=false;
 
 function updateAim(e){
   var rect=canvas.getBoundingClientRect();
@@ -496,6 +496,7 @@ function updateAim(e){
   shooter.angle=aimAngle;draw()
 }
 
+// PC: 移动瞄准，点击发射
 canvas.addEventListener('mousemove',function(e){
   if(state!=='playing'||bullet||!shooter.ready)return;
   updateAim(e)
@@ -504,27 +505,33 @@ canvas.addEventListener('mousedown',function(e){
   e.preventDefault();e.stopPropagation();
   if(state==='paused'){togglePause();return}
   if(state==='over'){gameReset();return}
-  if(state!=='playing')return;
-  if(bullet||!shooter.ready)return;
-  updateAim(e);
-  ensureAudio();
-  shootBubble()
+  if(state!=='playing'||bullet||!shooter.ready)return;
+  updateAim(e);ensureAudio();shootBubble()
 });
 
-canvas.addEventListener('touchmove',function(e){
-  e.preventDefault();
-  if(state!=='playing'||bullet||!shooter.ready)return;
-  updateAim(e.touches[0])
-},{passive:false});
+// 移动端: 滑动瞄准，松手不发射，点炮台发射
 canvas.addEventListener('touchstart',function(e){
-  e.preventDefault();e.stopPropagation();
+  e.preventDefault();
   if(state==='paused'){togglePause();return}
   if(state==='over'){gameReset();return}
-  if(state!=='playing')return;
-  if(bullet||!shooter.ready)return;
-  updateAim(e.touches[0]);
-  ensureAudio();
-  shootBubble()
+  if(state!=='playing'||bullet||!shooter.ready)return;
+  var t=e.touches[0];slideStart={x:t.clientX,y:t.clientY};isSliding=false;
+  updateAim({clientX:t.clientX,clientY:t.clientY})
+},{passive:false});
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  if(!slideStart||state!=='playing'||bullet||!shooter.ready)return;
+  var t=e.touches[0],dx=t.clientX-slideStart.x,dy=t.clientY-slideStart.y;
+  if(dx*dx+dy*dy>36)isSliding=true; // 移动>6px才算滑动
+  updateAim({clientX:t.clientX,clientY:t.clientY})
+},{passive:false});
+canvas.addEventListener('touchend',function(e){
+  e.preventDefault();
+  if(!slideStart||state!=='playing'||bullet||!shooter.ready)return;
+  if(!isSliding){ // 轻点 = 发射
+    ensureAudio();shootBubble()
+  }
+  slideStart=null;isSliding=false
 },{passive:false});
 
 function togglePause(){
