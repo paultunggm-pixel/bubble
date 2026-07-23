@@ -456,26 +456,27 @@ function draw(){
   // 网格泡泡
   for(var r=0;r<ROWS;r++){var maxC=(r%2===0)?COLS:COLS-1;
     for(var c=0;c<maxC;c++){if(grid[r][c]===-1)continue;var p=pos(r,c);drawBubble(ctx,p.x,p.y,CELL_R,BUBBLE_COLORS[grid[r][c]],BUBBLE_DARK[grid[r][c]])}}
-  // 炮台（始终显示）
+  // 炮台（始终显示，手机优先设计）
   var pivotX=CANVAS_W/2,pivotY=CANVAS_H-100;
-  var a=shooter.angle,len=68; // 炮管长度 2x
+  var a=shooter.angle,len=68;
   var tipX=pivotX-Math.sin(a)*len,tipY=pivotY-Math.cos(a)*len;
   var tailX=pivotX+Math.sin(a)*len,tailY=pivotY+Math.cos(a)*len;
-  // 弹道预判线
+  // 弹道预判线（虚线大点）
   var path=tracePathFrom(tipX,tipY,a);
-  ctx.fillStyle='rgba(255,255,255,.2)';
-  for(var i=0;i<path.length;i+=3){ctx.beginPath();ctx.arc(path[i].x,path[i].y,1.5,0,Math.PI*2);ctx.fill()}
-  // 炮管
+  ctx.fillStyle='rgba(255,255,255,.22)';
+  for(var i=0;i<path.length;i+=2){ctx.beginPath();ctx.arc(path[i].x,path[i].y,2,0,Math.PI*2);ctx.fill()}
+  // 炮管（粗线）
   ctx.beginPath();ctx.moveTo(pivotX,pivotY);ctx.lineTo(tipX,tipY);
-  ctx.strokeStyle='#555';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
-  // 尾部把手
-  ctx.beginPath();ctx.arc(tailX,tailY,12,0,Math.PI*2);ctx.fillStyle='#2c2c2e';ctx.fill();ctx.strokeStyle='#555';ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='9px sans-serif';ctx.textAlign='center';
-  ctx.fillText('↔ 拖动',tailX,tailY-16);ctx.fillText('发射',tailX,tailY+22);
-  // 当前泡泡（支点上，始终显示当前/下一个）
-  if(!bullet||!shooter.ready){ // 无飞行中泡泡，或就绪状态
-    drawBubble(ctx,pivotX,pivotY,CELL_R+1,BUBBLE_COLORS[shooter.nextColor],BUBBLE_DARK[shooter.nextColor])
-  }
+  ctx.strokeStyle='#666';ctx.lineWidth=4;ctx.lineCap='round';ctx.stroke();
+  // 尾部把手（大圆，方便手指拖拽）
+  var pulse=1+Math.sin(Date.now()/800)*.08; // 微呼吸动画
+  ctx.beginPath();ctx.arc(tailX,tailY,18*pulse,0,Math.PI*2);
+  ctx.fillStyle='#2c2c2e';ctx.fill();ctx.strokeStyle='#ff9f0a';ctx.lineWidth=2.5;ctx.stroke();
+  // 尾部标签
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+  ctx.fillText('发射',tailX,tailY+4);
+  // 当前泡泡（支点上）
+  drawBubble(ctx,pivotX,pivotY,CELL_R+2,BUBBLE_COLORS[shooter.nextColor],BUBBLE_DARK[shooter.nextColor])
   // 飞行泡泡
   if(bullet)drawBubble(ctx,bullet.x,bullet.y,CELL_R,BUBBLE_COLORS[bullet.color],BUBBLE_DARK[bullet.color]);
 
