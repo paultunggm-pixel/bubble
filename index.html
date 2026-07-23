@@ -267,10 +267,26 @@ var BUBBLE_COLORS=['#74b9ff','#ff9f0a','#ff6b6b','#a29bfe','#4ade80'];
 var BUBBLE_DARK=['#5a9fe5','#e58a00','#e55a5a','#8e7de8','#3ac76a'];
 
 var grid,shots,score,state,timerInterval,autoSaveInterval,sessionBaseBest=0;
-var shooter={angle:-Math.PI/2,nextColor:0,ready:true}; // 发射器
-var bullet=null; // 飞行中的泡泡
+var shooter={angle:-Math.PI/2,nextColor:0,ready:true};
+var bullet=null,aimAngle=-Math.PI/2;
 
 function pos(r,c){return{x:CX_OFF+(c*CELL_R*2)+(r%2?CELL_R:0)+CELL_R,y:CY_OFF+r*ROW_H+CELL_R}}
+
+// 计算瞄准轨迹（含左右墙反弹）
+function tracePath(angle){
+  var points=[],x=CANVAS_W/2,y=CANVAS_H-60,vx=Math.cos(angle)*8,vy=Math.sin(angle)*8;
+  for(var i=0;i<120;i++){
+    x+=vx;y+=vy;
+    if(x<=CX_OFF+CELL_R){x=CX_OFF+CELL_R;vx=Math.abs(vx)}
+    if(x>=CANVAS_W-CX_OFF-CELL_R){x=CANVAS_W-CX_OFF-CELL_R;vx=-Math.abs(vx)}
+    points.push({x:x,y:y});
+    if(y<=CY_OFF+CELL_R*2)break;
+    // 碰到现有泡泡
+    for(var r=0;r<ROWS;r++){var mc=(r%2===0)?COLS:COLS-1;
+      for(var c=0;c<mc;c++){if(grid[r][c]===-1)continue;var p=pos(r,c),dx=x-p.x,dy=y-p.y;
+        if(dx*dx+dy*dy<CELL_R*CELL_R*4){return points}}}
+  }return points
+}
 
 function createGrid(){
   var g=[];for(var r=0;r<ROWS;r++){
@@ -347,7 +363,7 @@ function nearestCell(x,y){
 
 function shootBubble(){
   if(!shooter.ready||bullet||state!=='playing')return;
-  bullet={x:CANVAS_W/2,y:CANVAS_H-50,vx:Math.cos(shooter.angle)*8,vy:Math.sin(shooter.angle)*8,color:shooter.nextColor};
+  bullet={x:CANVAS_W/2,y:CANVAS_H-60,vx:Math.cos(shooter.angle)*8,vy:Math.sin(shooter.angle)*8,color:shooter.nextColor};
   shooter.ready=false;shooter.nextColor=Math.floor(Math.random()*5);shots++;
   updateHUD();sfxShoot()
 }
@@ -440,15 +456,21 @@ function draw(){
   // 网格泡泡
   for(var r=0;r<ROWS;r++){var maxC=(r%2===0)?COLS:COLS-1;
     for(var c=0;c<maxC;c++){if(grid[r][c]===-1)continue;var p=pos(r,c);drawBubble(ctx,p.x,p.y,CELL_R,BUBBLE_COLORS[grid[r][c]],BUBBLE_DARK[grid[r][c]])}}
-  // 发射器
+  // 炮台 + 弹道
   if(!bullet&&shooter.ready){
-    drawBubble(ctx,CANVAS_W/2,CANVAS_H-50,CELL_R,BUBBLE_COLORS[shooter.nextColor],BUBBLE_DARK[shooter.nextColor]);
-    // 瞄准线
-    var ax=CANVAS_W/2+Math.cos(shooter.angle)*35,ay=CANVAS_H-50+Math.sin(shooter.angle)*35;
-    ctx.beginPath();ctx.moveTo(CANVAS_W/2,CANVAS_H-50);ctx.lineTo(ax,ay);
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.setLineDash([4,6]);ctx.stroke();ctx.setLineDash([]);
-    // 瞄准端点
-    ctx.beginPath();ctx.arc(ax,ay,3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fill()
+    // 弹道路径（虚线小点）
+    var path=tracePath(shooter.angle);
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    for(var i=0;i<path.length;i+=2){ctx.beginPath();ctx.arc(path[i].x,path[i].y,1.5,0,Math.PI*2);ctx.fill()}
+    // 炮管
+    var cx=CANVAS_W/2,cy=CANVAS_H-60,len=32;
+    var mx=cx+Math.cos(shooter.angle)*len,my=cy+Math.sin(shooter.angle)*len;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(shooter.angle-0.35)*12,cy+Math.sin(shooter.angle-0.35)*12);
+    ctx.lineTo(mx,my);ctx.lineTo(cx+Math.cos(shooter.angle+0.35)*12,cy+Math.sin(shooter.angle+0.35)*12);
+    ctx.closePath();ctx.fillStyle='#3a3a3c';ctx.fill();
+    ctx.strokeStyle='#555';ctx.lineWidth=1.5;ctx.stroke();
+    // 炮座
+    drawBubble(ctx,cx,cy,CELL_R+2,BUBBLE_COLORS[shooter.nextColor],BUBBLE_DARK[shooter.nextColor])
   }
   // 飞行泡泡
   if(bullet)drawBubble(ctx,bullet.x,bullet.y,CELL_R,BUBBLE_COLORS[bullet.color],BUBBLE_DARK[bullet.color]);
@@ -469,7 +491,7 @@ function updateAim(e){
   var rect=canvas.getBoundingClientRect();
   var mx=(e.clientX-rect.left)*(canvas.width/rect.width);
   var my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-50);
+  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-60);
   aimAngle=Math.atan2(dy,dx);
   shooter.angle=aimAngle;draw()
 }
