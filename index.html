@@ -372,10 +372,8 @@ function updateBullet(){
     var cell=nearestCell(bullet.x,bullet.y);
     if(cell){grid[cell[0]][cell[1]]=bullet.color;var pts=popBubbles(cell[0],cell[1]);if(pts>0){score+=pts;sfxPop();showScorePopup('+'+pts+'分')}}
     bullet=null;shooter.ready=true;updateHUD();draw();
-    // 检查顶上新增行
     if(shots%6===0)addRow();
-    // 检查游戏结束
-    checkGameOver()
+    checkGameOver();return
   }
   // 碰到其他泡泡
   for(var r=0;r<ROWS;r++){var maxC=(r%2===0)?COLS:COLS-1;
