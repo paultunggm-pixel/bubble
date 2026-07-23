@@ -446,7 +446,9 @@ function draw(){
     // 瞄准线
     var ax=CANVAS_W/2+Math.cos(shooter.angle)*35,ay=CANVAS_H-50+Math.sin(shooter.angle)*35;
     ctx.beginPath();ctx.moveTo(CANVAS_W/2,CANVAS_H-50);ctx.lineTo(ax,ay);
-    ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,6]);ctx.stroke();ctx.setLineDash([])
+    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.setLineDash([4,6]);ctx.stroke();ctx.setLineDash([]);
+    // 瞄准端点
+    ctx.beginPath();ctx.arc(ax,ay,3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fill()
   }
   // 飞行泡泡
   if(bullet)drawBubble(ctx,bullet.x,bullet.y,CELL_R,BUBBLE_COLORS[bullet.color],BUBBLE_DARK[bullet.color]);
@@ -461,32 +463,45 @@ function updateHUD(){document.getElementById('hdScore').textContent=score.toLoca
 
 // ===== 输入 =====
 var canvas=document.getElementById('board');
+var aimAngle=-Math.PI/2;
+
+function updateAim(e){
+  var rect=canvas.getBoundingClientRect();
+  var mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  var my=(e.clientY-rect.top)*(canvas.height/rect.height);
+  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-50);
+  aimAngle=Math.atan2(dy,dx);
+  shooter.angle=aimAngle;draw()
+}
+
+canvas.addEventListener('mousemove',function(e){
+  if(state!=='playing'||bullet||!shooter.ready)return;
+  updateAim(e)
+});
 canvas.addEventListener('mousedown',function(e){
   e.preventDefault();e.stopPropagation();
   if(state==='paused'){togglePause();return}
   if(state==='over'){gameReset();return}
   if(state!=='playing')return;
+  if(bullet||!shooter.ready)return;
+  updateAim(e);
   ensureAudio();
-  var rect=canvas.getBoundingClientRect();
-  var mx=(e.clientX-rect.left)*(canvas.width/rect.width);
-  var my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-50);
-  shooter.angle=Math.atan2(dy,dx);
-  draw();
   shootBubble()
 });
+
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  if(state!=='playing'||bullet||!shooter.ready)return;
+  updateAim(e.touches[0])
+},{passive:false});
 canvas.addEventListener('touchstart',function(e){
   e.preventDefault();e.stopPropagation();
   if(state==='paused'){togglePause();return}
   if(state==='over'){gameReset();return}
   if(state!=='playing')return;
+  if(bullet||!shooter.ready)return;
+  updateAim(e.touches[0]);
   ensureAudio();
-  var rect=canvas.getBoundingClientRect();
-  var mx=(e.touches[0].clientX-rect.left)*(canvas.width/rect.width);
-  var my=(e.touches[0].clientY-rect.top)*(canvas.height/rect.height);
-  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-50);
-  shooter.angle=Math.atan2(dy,dx);
-  draw();
   shootBubble()
 },{passive:false});
 
