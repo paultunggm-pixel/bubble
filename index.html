@@ -301,7 +301,7 @@ function initLevel(){
     var maxC=(r%2===0)?COLS:COLS-1;
     for(var c=0;c<maxC;c++)grid[r][c]=Math.floor(Math.random()*5)
   }
-  shots=0;bullet=null;shooter={angle:-Math.PI/2,nextColor:Math.floor(Math.random()*5),ready:true}
+  shots=0;bullet=null;shooter={angle:0,nextColor:Math.floor(Math.random()*5),ready:true}
 }
 
 // BFS 找同色连通组
@@ -359,13 +359,6 @@ function nearestCell(x,y){
     for(var c=0;c<maxC;c++){if(grid[r][c]!==-1)continue;var p=pos(r,c),dx=x-p.x,dy=y-p.y,d=dx*dx+dy*dy;
       if(d<bestD){bestD=d;best=[r,c]}}}
   return best
-}
-
-function shootBubble(){
-  if(!shooter.ready||bullet||state!=='playing')return;
-  bullet={x:CANVAS_W/2,y:CANVAS_H-60,vx:Math.cos(shooter.angle)*8,vy:Math.sin(shooter.angle)*8,color:shooter.nextColor};
-  shooter.ready=false;shooter.nextColor=Math.floor(Math.random()*5);shots++;
-  updateHUD();sfxShoot()
 }
 
 function updateBullet(){
