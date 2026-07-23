@@ -348,7 +348,7 @@ function nearestCell(x,y){
 function shootBubble(){
   if(!shooter.ready||bullet||state!=='playing')return;
   bullet={x:CANVAS_W/2,y:CANVAS_H-50,vx:Math.cos(shooter.angle)*8,vy:Math.sin(shooter.angle)*8,color:shooter.nextColor};
-  shooter.nextColor=Math.floor(Math.random()*5);shots++;
+  shooter.ready=false;shooter.nextColor=Math.floor(Math.random()*5);shots++;
   updateHUD();sfxShoot()
 }
 
