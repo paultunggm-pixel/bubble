@@ -512,8 +512,11 @@ function updateAim(e){
   var rect=canvas.getBoundingClientRect();
   var mx=(e.clientX-rect.left)*(canvas.width/rect.width);
   var my=(e.clientY-rect.top)*(canvas.height/rect.height);
-  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-70); // 相对支点的偏移
-  shooter.angle=Math.atan2(dx,dy);draw() // 尾部角度→针尖反向
+  var dx=mx-CANVAS_W/2,dy=my-(CANVAS_H-100);
+  var raw=Math.atan2(dx,dy);
+  // 限制±60°，炮管永远向上，不会横指或下指
+  shooter.angle=Math.max(-Math.PI/3,Math.min(Math.PI/3,raw));
+  draw()
 }
 
 // 发射：从针尖射出
